@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <title>המורה לזיהוי סולמות ביצירה</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
+    --font-serif: 'David Libre', 'Frank Ruhl Libre', Georgia, serif;
+    --font-sans: 'Segoe UI', 'Arial Hebrew', Arial, sans-serif;
     --cream:#FAF6EC;
     --paper:#FFFDF8;
     --ink:#2B2640;
@@ -26,7 +26,7 @@
     background:
       radial-gradient(circle at 15% 10%, #fffaf0 0%, transparent 45%),
       var(--cream);
-    font-family:'Heebo',sans-serif;
+    font-family:var(--font-sans);
     color:var(--ink);
     display:flex;
     align-items:center;
@@ -79,7 +79,7 @@
   }
   .clef-badge svg{width:26px;height:26px;}
   .header-text h1{
-    font-family:'Frank Ruhl Libre',serif;
+    font-family:var(--font-serif);
     font-size:19px;
     margin:0;
     font-weight:700;
@@ -214,7 +214,7 @@
     background:transparent;
     resize:none;
     outline:none;
-    font-family:'Heebo',sans-serif;
+    font-family:var(--font-sans);
     font-size:14.5px;
     color:var(--ink);
     padding:8px 4px;
