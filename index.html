@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
+<title>המורה לזיהוי סולמות ביצירה</title>
+<style>
+  :root{
+    --font-serif: 'David Libre', 'Frank Ruhl Libre', Georgia, serif;
+    --font-sans: 'Segoe UI', 'Arial Hebrew', Arial, sans-serif;
+    --cream:#FAF6EC;
+    --paper:#FFFDF8;
+    --ink:#2B2640;
+    --ink-soft:#5b5470;
+    --gold:#C9A227;
+    --gold-soft:#E8D9A8;
+    --teacher-bg:#F0E8D6;
+    --student-bg:#2B2640;
+    --student-text:#FAF6EC;
+    --line:#E3D9C2;
+    --shadow: 0 8px 24px rgba(43,38,64,0.08);
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 15% 10%, #fffaf0 0%, transparent 45%),
+      var(--cream);
+    font-family:var(--font-sans);
+    color:var(--ink);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+
+  .app{
+    width:100%;
+    max-width:560px;
+    height:min(720px,92vh);
+    background:var(--paper);
+    border-radius:28px;
+    box-shadow:var(--shadow);
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    border:1px solid var(--line);
+    position:relative;
+  }
+
+  .header{
+    position:relative;
+    padding:22px 24px 18px;
+    background:linear-gradient(180deg,#FFFDF8 0%, #FAF3E2 100%);
+    border-bottom:1px solid var(--line);
+    overflow:hidden;
+  }
+  .staff{
+    position:absolute;
+    inset:0;
+    opacity:0.35;
+    pointer-events:none;
+  }
+  .staff svg{width:100%;height:100%;}
+  .header-content{
+    position:relative;
+    display:flex;
+    align-items:center;
+    gap:14px;
+  }
+  .clef-badge{
+    width:48px;height:48px;
+    border-radius:50%;
+    background:var(--ink);
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+    box-shadow:0 4px 10px rgba(43,38,64,0.25);
+  }
+  .clef-badge svg{width:26px;height:26px;}
+  .header-text h1{
+    font-family:var(--font-serif);
+    font-size:19px;
+    margin:0;
+    font-weight:700;
+    color:var(--ink);
+  }
+  .header-text p{
+    margin:2px 0 0;
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+  .status-dot{
+    width:8px;height:8px;border-radius:50%;
+    background:#7A9B76;
+    display:inline-block;
+    margin-left:6px;
+    box-shadow:0 0 0 0 rgba(122,155,118,0.6);
+    animation:pulse 2s infinite;
+  }
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(122,155,118,0.5);}
+    70%{box-shadow:0 0 0 6px rgba(122,155,118,0);}
+    100%{box-shadow:0 0 0 0 rgba(122,155,118,0);}
+  }
+
+  .messages{
+    flex:1;
+    overflow-y:auto;
+    padding:22px 18px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    scroll-behavior:smooth;
+  }
+  .messages::-webkit-scrollbar{width:6px;}
+  .messages::-webkit-scrollbar-thumb{background:var(--gold-soft);border-radius:10px;}
+
+  .row{
+    display:flex;
+    gap:8px;
+    max-width:88%;
+    animation:rise .35s ease both;
+  }
+  .row.teacher{align-self:flex-start;}
+  .row.student{align-self:flex-end;flex-direction:row-reverse;}
+
+  @keyframes rise{
+    from{opacity:0;transform:translateY(10px) scale(.98);}
+    to{opacity:1;transform:translateY(0) scale(1);}
+  }
+
+  .avatar{
+    width:30px;height:30px;border-radius:50%;
+    flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    font-size:14px;
+    margin-top:2px;
+  }
+  .row.teacher .avatar{background:var(--gold-soft);color:var(--ink);font-size:18px;}
+  .row.student .avatar{background:var(--ink);color:var(--gold-soft);}
+
+  .bubble{
+    padding:12px 16px;
+    border-radius:18px;
+    font-size:14.5px;
+    line-height:1.7;
+    white-space:pre-wrap;
+    box-shadow:0 2px 6px rgba(43,38,64,0.06);
+  }
+  .row.teacher .bubble{
+    background:var(--teacher-bg);
+    color:var(--ink);
+    border-bottom-left-radius:6px;
+  }
+  .row.student .bubble{
+    background:var(--student-bg);
+    color:var(--student-text);
+    border-bottom-right-radius:6px;
+  }
+
+  .typing-row{align-self:flex-start;display:flex;gap:8px;max-width:88%;}
+  .typing-bubble{
+    background:var(--teacher-bg);
+    border-radius:18px;
+    border-bottom-left-radius:6px;
+    padding:10px 16px;
+    display:flex;
+    gap:6px;
+    align-items:flex-end;
+    height:34px;
+  }
+  .note{
+    font-size:14px;
+    color:var(--ink-soft);
+    display:inline-block;
+    animation:bob 1.1s infinite ease-in-out;
+  }
+  .note:nth-child(2){animation-delay:.15s;}
+  .note:nth-child(3){animation-delay:.3s;}
+  @keyframes bob{
+    0%,60%,100%{transform:translateY(0);opacity:.55;}
+    30%{transform:translateY(-7px);opacity:1;}
+  }
+
+  /* Choice chips */
+  .choices-row{
+    align-self:flex-start;
+    max-width:92%;
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-right:38px;
+    animation:rise .35s ease both;
+  }
+  .choice-btn{
+    background:var(--paper);
+    border:1.5px solid var(--gold);
+    color:var(--ink);
+    padding:9px 16px;
+    border-radius:20px;
+    font-family:var(--font-sans);
+    font-size:13.5px;
+    cursor:pointer;
+    transition:background .15s, transform .1s, color .15s;
+    box-shadow:0 2px 5px rgba(43,38,64,0.05);
+  }
+  .choice-btn:hover{background:var(--gold);color:var(--paper);transform:translateY(-1px);}
+  .choice-btn:active{transform:translateY(0) scale(.97);}
+  .choice-btn:disabled{opacity:.4;cursor:default;transform:none;background:var(--paper);color:var(--ink);}
+
+  .input-bar{
+    padding:14px 16px 18px;
+    border-top:1px solid var(--line);
+    background:var(--paper);
+    display:flex;
+    gap:10px;
+    align-items:flex-end;
+  }
+  .input-wrap{
+    flex:1;
+    background:var(--cream);
+    border:1.5px solid var(--line);
+    border-radius:24px;
+    padding:6px 8px 6px 16px;
+    display:flex;
+    align-items:center;
+    transition:border-color .2s, box-shadow .2s;
+  }
+  .input-wrap:focus-within{
+    border-color:var(--gold);
+    box-shadow:0 0 0 3px rgba(201,162,39,0.15);
+  }
+  textarea{
+    flex:1;
+    border:none;
+    background:transparent;
+    resize:none;
+    outline:none;
+    font-family:var(--font-sans);
+    font-size:16px;
+    color:var(--ink);
+    padding:8px 4px;
+    max-height:100px;
+    line-height:1.4;
+  }
+  textarea::placeholder{color:#a39c8c;}
+
+  .send-btn{
+    width:42px;height:42px;
+    border-radius:50%;
+    border:none;
+    background:var(--ink);
+    color:var(--gold-soft);
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    flex-shrink:0;
+    transition:transform .15s, background .2s;
+    box-shadow:0 4px 10px rgba(43,38,64,0.25);
+  }
+  .send-btn:hover{background:#3a3458;transform:scale(1.06);}
+  .send-btn:active{transform:scale(0.94);}
+  .send-btn:disabled{opacity:.45;cursor:default;transform:none;}
+  .send-btn svg{width:18px;height:18px;transform:scaleX(-1);}
+
+  .reset-link{
+    text-align:center;
+    font-size:11.5px;
+    color:#b0a78f;
+    padding-bottom:6px;
+    cursor:pointer;
+    user-select:none;
+  }
+  .reset-link:hover{color:var(--ink-soft);text-decoration:underline;}
+
+  @media (max-width:480px){
+    body{padding:0;}
+    .app{
+      height:100vh;
+      height:100dvh;
+      width:100%;
+      max-width:100%;
+      border-radius:0;
+      border:none;
+    }
+    .header{padding:16px 14px 12px;}
+    .header-text h1{font-size:17px;}
+    .messages{padding:16px 12px;}
+    .input-bar{padding:10px 12px 14px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header">
+    <div class="staff">
+      <svg viewBox="0 0 600 90" preserveAspectRatio="none">
+        <line x1="0" y1="15" x2="600" y2="15" stroke="#2B2640" stroke-width="1"/>
+        <line x1="0" y1="30" x2="600" y2="30" stroke="#2B2640" stroke-width="1"/>
+        <line x1="0" y1="45" x2="600" y2="45" stroke="#2B2640" stroke-width="1"/>
+        <line x1="0" y1="60" x2="600" y2="60" stroke="#2B2640" stroke-width="1"/>
+        <line x1="0" y1="75" x2="600" y2="75" stroke="#2B2640" stroke-width="1"/>
+      </svg>
+    </div>
+    <div class="header-content">
+      <div class="clef-badge">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <line x1="8" y1="4" x2="8" y2="16.5" stroke="#E8D9A8" stroke-width="1.4" stroke-linecap="round"/>
+          <line x1="17" y1="3" x2="17" y2="15.5" stroke="#E8D9A8" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M8 4 L17 3" stroke="#E8D9A8" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M8 7.5 L17 6.5" stroke="#E8D9A8" stroke-width="1.4" stroke-linecap="round"/>
+          <ellipse cx="6.3" cy="17" rx="2.3" ry="1.7" fill="#E8D9A8" transform="rotate(-18 6.3 17)"/>
+          <ellipse cx="15.3" cy="16" rx="2.3" ry="1.7" fill="#E8D9A8" transform="rotate(-18 15.3 16)"/>
+        </svg>
+      </div>
+      <div class="header-text">
+        <h1>המורה לזיהוי סולמות ביצירה</h1>
+        <p><span class="status-dot"></span>נלמד לזהות סולמות, צעד אחר צעד — פועל גם בלי אינטרנט</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="messages" id="messages"></div>
+
+  <div id="typingIndicator" style="display:none; padding:0 18px;">
+    <div class="typing-row">
+      <div class="avatar" style="background:var(--gold-soft);color:var(--ink);font-size:18px;">𝄢</div>
+      <div class="typing-bubble">
+        <span class="note">♪</span><span class="note">♫</span><span class="note">♪</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="reset-link" id="resetBtn">התחל שיחה חדשה</div>
+
+  <div class="input-bar">
+    <div class="input-wrap">
+      <textarea id="userInput" rows="1" placeholder="כתוב תשובה חופשית כאן..."></textarea>
+    </div>
+    <button class="send-btn" id="sendBtn" title="שלח">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3 11L21 3L13 21L11 13L3 11Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<script>
+/* =========================================================================
+   מנוע לימוד מקומי (ללא שרת/API) לזיהוי סולמות
+   כל הנתונים המוזיקליים מחושבים מראש בטבלאות קבועות ומדויקות.
+   ========================================================================= */
+
+const SHARP_ORDER = ["פה","דו","סול","רה","לה","מי","סי"];
+const FLAT_ORDER  = ["סי","מי","לה","רה","סול","דו","פה"];
+
+const SHARP_MAJORS = ["דו","סול","רה","לה","מי","סי","פה דיאז","דו דיאז"];
+const SHARP_MINORS = ["לה","מי","סי","פה דיאז","דו דיאז","סול דיאז","רה דיאז","לה דיאז"];
+const SHARP_RAISED7 = ["סול דיאז","רה דיאז","לה דיאז","מי דיאז","סי דיאז","פה כפול-דיאז (Fx)","דו כפול-דיאז (Cx)","סול כפול-דיאז (Gx)"];
+
+const FLAT_MAJORS = ["דו","פה","סי במול","מי במול","לה במול","רה במול","סול במול","דו במול"];
+const FLAT_MINORS = ["לה","רה","סול","דו","פה","סי במול","מי במול","לה במול"];
+const FLAT_RAISED7 = ["סול דיאז","דו דיאז","פה דיאז","סי (טבעי)","מי (טבעי)","לה (טבעי)","רה (טבעי)","סול (טבעי)"];
+
+let state = {};
+
+const messagesEl = document.getElementById('messages');
+const inputEl = document.getElementById('userInput');
+const sendBtn = document.getElementById('sendBtn');
+const typingIndicator = document.getElementById('typingIndicator');
+const resetBtn = document.getElementById('resetBtn');
+
+function scrollToBottom(){
+  requestAnimationFrame(()=>{ messagesEl.scrollTop = messagesEl.scrollHeight; });
+}
+
+function addBubble(role, text){
+  const row = document.createElement('div');
+  row.className = 'row ' + (role === 'teacher' ? 'teacher' : 'student');
+
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar';
+  avatar.textContent = role === 'teacher' ? '𝄢' : '🎵';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.textContent = text;
+
+  row.appendChild(avatar);
+  row.appendChild(bubble);
+  messagesEl.appendChild(row);
+  scrollToBottom();
+}
+
+function removeChoiceRows(){
+  document.querySelectorAll('.choices-row').forEach(el => el.remove());
+}
+
+function addChoices(options, onPick){
+  removeChoiceRows();
+  const row = document.createElement('div');
+  row.className = 'choices-row';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.textContent = opt.label;
+    btn.addEventListener('click', () => {
+      row.querySelectorAll('button').forEach(b => b.disabled = true);
+      addBubble('student', opt.label);
+      onPick(opt.value);
+    });
+    row.appendChild(btn);
+  });
+  messagesEl.appendChild(row);
+  scrollToBottom();
+}
+
+function teacherSay(text, delay, callback){
+  typingIndicator.style.display = 'block';
+  scrollToBottom();
+  setTimeout(() => {
+    typingIndicator.style.display = 'none';
+    addBubble('teacher', text);
+    if (callback) callback();
+  }, delay || 500);
+}
+
+function shuffle(arr){
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startFlow(){
+  state = { step: 'count' };
+  teacherSay(
+    "שלום! אני כאן כדי לעזור לך ללמוד לזהות סולמות בעצמך, צעד אחר צעד.\n\nבוא נתחיל - כאשר אתה מסתכל על המפתח בתחילת היצירה שאתה בודק: האם יש שם סימני היתק, ומאיזה סוג הם - דיאזים (#) או במולים (♭)?",
+    350,
+    () => {
+      addChoices([
+        {label:"0 - אין סימני היתק", value:{type:'none'}},
+        {label:"יש דיאזים (#)", value:{type:'sharp'}},
+        {label:"יש במולים (♭)", value:{type:'flat'}},
+      ], handleAccidentalType);
+    }
+  );
+}
+
+function handleAccidentalType(val){
+  if (val.type === 'none'){
+    proceedWithCounts('none', 0);
+    return;
+  }
+  state.accType = val.type;
+  const word = val.type === 'sharp' ? 'דיאזים' : 'במולים';
+  teacherSay(`בסדר. וכמה ${word} בדיוק יש במפתח?`, 500, () => {
+    const opts = [1,2,3,4,5,6,7].map(n => ({label:String(n), value:n}));
+    addChoices(opts, (n) => proceedWithCounts(val.type, n));
+  });
+}
+
+function proceedWithCounts(type, n){
+  state.accCount = n;
+
+  if (type === 'none'){
+    state.accType = 'none';
+    state.majorName = "דו";
+    state.minorName = "לה";
+    teacherSay(
+      "כאשר אין שום סימן היתק במפתח, יש רק זוג אחד אפשרי: דו מז'ור, או לה מינור (המינור המקביל שלו) - בלי שום דיאז או במול.",
+      550,
+      () => askTonicQuestion()
+    );
+    return;
+  }
+
+  if (type === 'sharp'){
+    const lastSharp = SHARP_ORDER[n - 1];
+    teacherSay(
+      `כאשר יש ${n} דיאזים, הדיאז האחרון (הצליל האחרון בסדר: ${SHARP_ORDER.slice(0,n).join(" ← ")}) הוא הטון המוביל של הסולם. איזה צליל, לדעתך, הוא הדיאז האחרון כאן?`,
+      600,
+      () => {
+        const distractors = shuffle(SHARP_ORDER.filter(x => x !== lastSharp)).slice(0,2);
+        const opts = shuffle([lastSharp, ...distractors]).map(x => ({label: x + " דיאז", value: x}));
+        addChoices(opts, (picked) => checkLastSharp(picked, lastSharp, n));
+      }
+    );
+    return;
+  }
+
+  if (type === 'flat'){
+    if (n === 1){
+      state.majorName = "פה";
+      teacherSay(
+        "כשיש רק במול אחד בלבד, הכלל של 'הבמול הלפני-אחרון' לא תקף (אין באמת 'לפני-אחרון'). זה מקרה מיוחד שכדאי לזכור בעל-פה: במול אחד תמיד אומר שהסולם המז'ורי הוא פה מז'ור.",
+        650,
+        () => findRelativeMinor()
+      );
+      return;
+    }
+    const lastFlat = FLAT_ORDER[n - 1];
+    const secondLastFlat = FLAT_ORDER[n - 2];
+    teacherSay(
+      `כאשר יש ${n} במולים, הבמול הלפני-אחרון (מתוך הסדר: ${FLAT_ORDER.slice(0,n).join(" ← ")}) הוא בעצמו שם הסולם המז'ורי. איזה צליל, לדעתך, הוא הבמול הלפני-אחרון כאן?`,
+      600,
+      () => {
+        const pool = FLAT_ORDER.slice(0, n).filter(x => x !== secondLastFlat);
+        const distractors = shuffle(pool).slice(0,2);
+        const opts = shuffle([secondLastFlat, ...distractors]).map(x => ({label: x + " במול", value: x}));
+        addChoices(opts, (picked) => checkSecondLastFlat(picked, secondLastFlat, lastFlat, n));
+      }
+    );
+    return;
+  }
+}
+
+function checkLastSharp(picked, correct, n){
+  if (picked !== correct){
+    teacherSay(
+      `לא בדיוק. נסה לספור שוב את סדר הדיאזים: ${SHARP_ORDER.slice(0,n).join(" ← ")} - הדיאז ה-${n} ברשימה הזו הוא הדיאז האחרון.`,
+      550,
+      () => {
+        const distractors = shuffle(SHARP_ORDER.filter(x => x !== correct)).slice(0,2);
+        const opts = shuffle([correct, ...distractors]).map(x => ({label: x + " דיאז", value: x}));
+        addChoices(opts, (p2) => checkLastSharp(p2, correct, n));
+      }
+    );
+    return;
+  }
+  teacherSay(
+    `נכון! ${correct} דיאז הוא הדיאז האחרון - הטון המוביל. כעת, אם עולים ממנו סקונדה קטנה (לא חצי טון סתם, אלא שם צליל אחד קדימה), לאיזה צליל מגיעים?`,
+    600,
+    () => {
+      const majorAnswer = SHARP_MAJORS[n];
+      const noteLetters = ["דו","רה","מי","פה","סול","לה","סי"];
+      const idx = noteLetters.indexOf(correct);
+      const wrong1 = noteLetters[idx];
+      const wrong2 = noteLetters[(idx + 2) % 7];
+      const opts = shuffle([...new Set([majorAnswer, wrong1, wrong2])]).map(x => ({label:x, value:x}));
+      addChoices(opts, (picked) => checkMinorSecondUp(picked, majorAnswer, n));
+    }
+  );
+}
+
+function checkMinorSecondUp(picked, correct, n){
+  if (picked !== correct){
+    teacherSay(
+      `לא מדויק. סקונדה קטנה תמיד עוברת לשם צליל הבא ברצף (לא נשארים על אותו שם) - חשוב על זה כמו לעלות "מדרגה" אחת בסולם המוזיקלי. נסה שוב:`,
+      550,
+      () => {
+        const opts = shuffle([correct, picked]).map(x => ({label:x, value:x}));
+        addChoices(opts, (p2) => checkMinorSecondUp(p2, correct, n));
+      }
+    );
+    return;
+  }
+  state.majorName = correct;
+  teacherSay(`מצוין! אז הסולם המז'ורי האפשרי הוא ${correct} מז'ור.`, 500, () => findRelativeMinor());
+}
+
+function checkSecondLastFlat(picked, correct, lastFlat, n){
+  if (picked !== correct){
+    teacherSay(
+      `לא בדיוק. שים לב שוב לסדר הבמולים: ${FLAT_ORDER.slice(0,n).join(" ← ")} - הבמול ה-${n-1} ברשימה (לא האחרון, אלא זה שלפניו) הוא שם הסולם המז'ורי.`,
+      550,
+      () => {
+        const pool = FLAT_ORDER.slice(0, n).filter(x => x !== correct);
+        const distractors = shuffle(pool).slice(0,2);
+        const opts = shuffle([correct, ...distractors]).map(x => ({label: x + " במול", value: x}));
+        addChoices(opts, (p2) => checkSecondLastFlat(p2, correct, lastFlat, n));
+      }
+    );
+    return;
+  }
+  state.majorName = correct + " במול";
+  teacherSay(`נכון! הבמול הלפני-אחרון הוא ${correct}, ולכן הסולם המז'ורי האפשרי הוא ${correct} במול מז'ור.`, 550, () => findRelativeMinor());
+}
+
+function findRelativeMinor(){
+  const noteLetters = ["דו","רה","מי","פה","סול","לה","סי"];
+  const majorLetter = state.majorName.replace(" דיאז","").replace(" במול","");
+  const idx = noteLetters.indexOf(majorLetter);
+  const down1 = noteLetters[(idx - 1 + 7) % 7];
+  const down2 = noteLetters[(idx - 2 + 7) % 7];
+
+  teacherSay(
+    `כעת נמצא את המינור המקביל. סופרים טרצה קטנה כלפי מטה מהטוניקה המז'ורית (${state.majorName}) - כלומר שלושה שמות צלילים ברצף, כולל נקודת ההתחלה:\n\n${state.majorName} (1) ← ${down1} (2) ← ${down2} (3)\n\nולאחר מכן בודקים שהמרחק בפועל בין ${state.majorName} ל-${down2} הוא בדיוק טון וחצי. מהו, לדעתך, שם הסולם המינורי המקביל?`,
+    700,
+    () => {
+      let minorAns;
+      if (state.accCount === 0) minorAns = "לה";
+      else if (state.accType === 'sharp') minorAns = SHARP_MINORS[state.accCount];
+      else minorAns = FLAT_MINORS[state.accCount];
+
+      // בונים מסיח שגוי אך סביר - תמיד שונה מהתשובה הנכונה
+      let wrong = down2;
+      if (wrong === minorAns){
+        wrong = (down1 !== minorAns) ? down1 : null;
+      }
+      if (!wrong){
+        // כל שמות האות זהים - בונים מסיח ע"י שינוי הסימן (דיאז/במול) על אותה אות
+        const base = minorAns.replace(' דיאז','').replace(' במול','');
+        if (minorAns.includes('דיאז')) wrong = base;
+        else if (minorAns.includes('במול')) wrong = base;
+        else wrong = base + ' דיאז';
+      }
+
+      const opts = shuffle([minorAns, wrong]).map(x => ({label:x + " מינור", value:x}));
+      addChoices(opts, (picked) => checkRelativeMinor(picked, minorAns));
+    }
+  );
+}
+
+function checkRelativeMinor(picked, correct){
+  if (picked !== correct){
+    teacherSay(
+      `כמעט! שים לב: אסור להניח מראש שהמרחק תמיד "עגול" - יש לחשב בפועל את מספר חצאי-הטונים בין שני הצלילים. לפעמים כבר מתקבל טון וחצי בלי צורך בסימן נוסף, ולפעמים כן צריך להוסיף דיאז או במול לצליל התחתון כדי להגיע בדיוק לטרצה קטנה. נסה שוב:`,
+      600,
+      () => {
+        const opts = shuffle([correct, picked]).map(x => ({label:x + " מינור", value:x}));
+        addChoices(opts, (p2) => checkRelativeMinor(p2, correct));
+      }
+    );
+    return;
+  }
+  state.minorName = correct;
+  teacherSay(
+    `מצוין! אז יש לנו שני מועמדים: ${state.majorName} מז'ור, או ${state.minorName} מינור. עכשיו נצטרך להכריע ביניהם.`,
+    600,
+    () => askTonicQuestion()
+  );
+}
+
+function askTonicQuestion(){
+  state.step = 'tonic';
+  teacherSay(
+    "כאשר אתה מקשיב או מסתכל על היצירה עצמה: על איזה צליל היא נגמרת? (זה הצליל שמרגיש הכי הרבה כמו 'בית' - שם היד נחה בסוף המנגינה)",
+    600
+  );
+}
+
+function detectTonicMatch(text){
+  const NOTE_LETTERS = ["דו","רה","מי","פה","סול","לה","סי"];
+  const majorBase = state.majorName.replace(' דיאז','').replace(' במול','');
+  const minorBase = state.minorName.replace(' דיאז','').replace(' במול','');
+  const foundMajor = text.includes(majorBase);
+  const foundMinor = text.includes(minorBase);
+  if (foundMajor && !foundMinor) return 'major';
+  if (foundMinor && !foundMajor) return 'minor';
+  return null;
+}
+
+function isUnsureAnswer(text){
+  const t = (text || '').trim();
+  if (!t) return true;
+  const unsurePatterns = [
+    "לא יודע","לא יודעת","לא בטוח","לא בטוחה","אין לי מושג",
+    "לא ברור","אין מושג","אולי","לא זוכר","לא זוכרת","קשה לי",
+    "לא נשמע לי","not sure","don't know","idk"
+  ];
+  return unsurePatterns.some(p => t.includes(p));
+}
+
+function handleTonicFreeText(text){
+  if (isUnsureAnswer(text)){
+    state.tonicTextMatch = null;
+    teacherSay(
+      `זה בסדר גמור שלא ברור לך עדיין - זה בדיוק מה שנתרגל עכשיו. נסה להאזין (או לדמיין) את סוף היצירה: על איזה צליל בודד היד "נחה" כשהיא נגמרת? זה יכול להיות ${state.majorName} או ${state.minorName} - נסה לזמזם את שתי האפשרויות ולראות איזו מהן מרגישה כמו "נקודת סיום" טבעית.`,
+      700,
+      () => {
+        addChoices([
+          {label: state.majorName + " מרגיש כמו סיום", value:'major'},
+          {label: state.minorName + " מרגיש כמו סיום", value:'minor'},
+          {label:"עדיין לא בטוח/ה", value:'unsure'},
+        ], handleTonicChoice)
+      }
+    );
+    return;
+  }
+
+  const match = detectTonicMatch(text);
+  state.tonicTextMatch = match;
+  teacherSay(
+    `יופי, זה בדיוק הרעיון של "טוניקה" - הצליל שמרגיש כמו נקודת מנוחה וסיום. עכשיו תפעיל את זה בפועל: אם היצירה שלך נגמרת על ${state.majorName} - זה מרמז שמדובר ב-${state.majorName} מז'ור. אם היא נגמרת על ${state.minorName} - זה מרמז שמדובר ב-${state.minorName} מינור.\n\nעל סמך זה, על איזה משני הסולמות לדעתך כתובה היצירה?`,
+    750,
+    () => {
+      addChoices([
+        {label: state.majorName + " מז'ור", value:'major'},
+        {label: state.minorName + " מינור", value:'minor'},
+      ], handleTonicChoice)
+    }
+  );
+}
+
+function handleTonicChoice(choice){
+  if (choice === 'unsure'){
+    teacherSay(
+      `זה לגמרי בסדר. הדרך המעשית ביותר: פתח את התווים או האזנה של היצירה האמיתית, ובדוק על איזה צליל האקורד/התו האחרון בנוי - ${state.majorName} או ${state.minorName}. כשתדע, תוכל לבחור למטה.`,
+      650,
+      () => {
+        addChoices([
+          {label: state.majorName + " מז'ור", value:'major'},
+          {label: state.minorName + " מינור", value:'minor'},
+        ], handleTonicChoice)
+      }
+    );
+    return;
+  }
+  // אם ידוע בבירור על איזה צליל היצירה נגמרת (מהטקסט החופשי), נוודא התאמה
+  if (state.tonicTextMatch && choice !== state.tonicTextMatch){
+    const expectedName = state.tonicTextMatch === 'major' ? state.majorName + " מז'ור" : state.minorName + " מינור";
+    const tonicNote = state.tonicTextMatch === 'major' ? state.majorName : state.minorName;
+    teacherSay(
+      `רגע - קודם כתבת שהיצירה נגמרת על ${tonicNote}. אם ה'בית' הוא ${tonicNote}, זה בדיוק הטוניקה, ולכן זה אמור להצביע על ${expectedName}, לא על האפשרות שבחרת עכשיו. רוצה לתקן?`,
+      650,
+      () => {
+        addChoices([
+          {label: state.majorName + " מז'ור", value:'major'},
+          {label: state.minorName + " מינור", value:'minor'},
+        ], handleTonicChoice)
+      }
+    );
+    return;
+  }
+  state.tonicGuess = choice;
+  teacherSay(
+    "יפה! זו בדיוק ההיגיון הנכון - קדנצת הסיום היא אחד הרמזים החשובים ביותר. עכשיו נבדוק רמז נוסף שיכול לחזק את המסקנה.",
+    600,
+    () => askAccidentalsQuestion()
+  );
+}
+
+function askAccidentalsQuestion(){
+  const raised7 = state.accCount === 0
+    ? "סול דיאז"
+    : (state.accType === 'sharp' ? SHARP_RAISED7[state.accCount] : FLAT_RAISED7[state.accCount]);
+  state.raised7 = raised7;
+
+  teacherSay(
+    `שאלה נוספת: האם מופיעים ביצירה סימני מקרה (דיאז/במול/הכשר) שלא שייכים למפתח - ובפרט, האם המדרגה השביעית של ${state.minorName} מינור מופיעה מוגבהת (${raised7})?`,
+    650,
+    () => {
+      addChoices([
+        {label:"כן, מופיעה מוגבהת", value:'yes'},
+        {label:"לא, אין סימנים כאלה", value:'no'},
+        {label:"לא בטוח/ה", value:'unsure'},
+      ], handleAccidentalsAnswer)
+    }
+  );
+}
+
+function handleAccidentalsAnswer(ans){
+  if (ans === 'yes'){
+    teacherSay(
+      `זה רמז חזק מאוד למינור! כאשר המדרגה השביעית מוגבהת (${state.raised7}) לצורך יצירת טון מוביל, זהו סימן אופייני למינור הרמוני - כלומר עוד חיזוק לכך שהיצירה ב-${state.minorName} מינור ולא ב-${state.majorName} מז'ור.`,
+      650
+    );
+  } else if (ans === 'no'){
+    teacherSay(
+      "אם אין סימני מקרה כאלה, זה לא שולל שום דבר בפני עצמו - אבל זה כן אומר שההכרעה בין מז'ור למינור תלויה בעיקר בטוניקה ובתחושת הקדנצה שכבר זיהית.",
+      650
+    );
+  } else {
+    teacherSay(
+      "זה בסדר גמור - כדאי לחזור ליצירה ולבדוק אם יש תו עם סימן מקרה על המדרגה השביעית של הסולם המינורי. זה אחד הרמזים הכי אמינים למינור הרמוני.",
+      650
+    );
+  }
+  setTimeout(askForSummary, 900);
+}
+
+function askForSummary(){
+  state.step = 'summary';
+  teacherSay(
+    "עכשיו נסה לנסח במילים שלך מסקנה מלאה: מה שם הסולם, ואיך הגעת לזה (סימני היתק, טוניקה, וסימני מקרה אם היו)?",
+    600
+  );
+}
+
+function handleSummaryFreeText(text){
+  const guessedScale = state.tonicGuess === 'major'
+    ? (state.majorName + " מז'ור")
+    : (state.minorName + " מינור");
+
+  if (isUnsureAnswer(text)){
+    teacherSay(
+      `בוא נסכם ביחד אז: על סמך ${state.accCount === 0 ? "היעדר סימני היתק" : (state.accCount + " " + (state.accType==='sharp'?"הדיאזים":"הבמולים"))} הגענו לשני מועמדים - ${state.majorName} מז'ור ו-${state.minorName} מינור. הטוניקה (צליל הסיום) שזיהית הצביעה על ${guessedScale}. זו בדיוק המסקנה - היצירה כתובה ב-${guessedScale}. בפעם הבאה כדאי לנסות לנסח את זה במילים שלך, זה מחזק את ההבנה!`,
+      850,
+      () => {
+        teacherSay("רוצה לתרגל עוד פעם עם מספר סימני היתק אחר? לחץ על 'התחל שיחה חדשה' למטה בכל שלב שתרצה.", 700);
+      }
+    );
+    return;
+  }
+
+  teacherSay(
+    `יפה מאוד שניסחת את זה! הנה סיכום קצר של הדרך שעברנו:\n\n• סימני ההיתק (${state.accCount === 0 ? "אין סימנים" : state.accCount + " " + (state.accType==='sharp'?"דיאזים":"במולים")}) הובילו לשני מועמדים: ${state.majorName} מז'ור ו-${state.minorName} מינור.\n• הטוניקה (צליל הסיום) הצביעה על ${guessedScale}.\n• סימני המקרה (אם היו) יכלו לחזק את הזיהוי של המינור.\n\nהמסקנה שלך: היצירה כתובה ב-${guessedScale}.\n\nכל הכבוד - ככה בדיוק בונים זיהוי סולם, שלב אחר שלב, בלי לנחש!`,
+    900,
+    () => {
+      teacherSay("רוצה לתרגל עוד פעם עם מספר סימני היתק אחר? לחץ על 'התחל שיחה חדשה' למטה בכל שלב שתרצה.", 700);
+    }
+  );
+}
+
+function sendMessage(){
+  const text = inputEl.value.trim();
+  if(!text) return;
+
+  inputEl.value = '';
+  inputEl.style.height = 'auto';
+  removeChoiceRows();
+  addBubble('student', text);
+
+  if (state.step === 'tonic'){
+    handleTonicFreeText(text);
+  } else if (state.step === 'summary'){
+    handleSummaryFreeText(text);
+  } else {
+    teacherSay("תודה ששיתפת! בוא נמשיך לפי השלבים - תוכל ללחוץ על אחת האפשרויות למעלה כדי להתקדם.", 500);
+  }
+  inputEl.focus();
+}
+
+sendBtn.addEventListener('click', sendMessage);
+inputEl.addEventListener('keydown', (e) => {
+  if(e.key === 'Enter' && !e.shiftKey){
+    e.preventDefault();
+    sendMessage();
+  }
+});
+inputEl.addEventListener('input', () => {
+  inputEl.style.height = 'auto';
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 100) + 'px';
+});
+
+resetBtn.addEventListener('click', () => {
+  messagesEl.innerHTML = '';
+  removeChoiceRows();
+  startFlow();
+});
+
+startFlow();
+</script>
+</body>
+</html>
